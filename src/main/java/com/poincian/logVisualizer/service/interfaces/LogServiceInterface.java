@@ -8,4 +8,8 @@ public interface LogServiceInterface {
     LogSearchResponseDTO searchLogs(String index, String level, String serviceName, String keyword,
                                     LocalDateTime startDate, LocalDateTime endDate,
                                     int page, int size);
+
+    LogSearchResponseDTO searchLogsWithHighlight(String index, String level, String serviceName, String keyword,
+                                                 LocalDateTime startDate, LocalDateTime endDate,
+                                                 int page, int size);
 }
