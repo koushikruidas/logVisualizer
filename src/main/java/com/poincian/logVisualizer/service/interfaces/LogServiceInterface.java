@@ -1,6 +1,6 @@
 package com.poincian.logVisualizer.service.interfaces;
 
-import com.poincian.logVisualizer.model.LogSearchResponseDTO;
+import com.poincian.logVisualizer.model.response.LogSearchResponseDTO;
 
 import java.time.LocalDateTime;
 

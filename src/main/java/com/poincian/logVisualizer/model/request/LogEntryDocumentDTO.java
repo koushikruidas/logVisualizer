@@ -1,4 +1,4 @@
-package com.poincian.logVisualizer.model;
+package com.poincian.logVisualizer.model.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,13 +6,12 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class LogEntryDTO {
+public class LogEntryDocumentDTO {
     private String id;
     private String level;
     private String serviceName;

@@ -1,6 +1,6 @@
 package com.poincian.logVisualizer.controller;
 
-import com.poincian.logVisualizer.model.LogSearchResponseDTO;
+import com.poincian.logVisualizer.model.response.LogSearchResponseDTO;
 import com.poincian.logVisualizer.service.interfaces.LogServiceInterface;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
