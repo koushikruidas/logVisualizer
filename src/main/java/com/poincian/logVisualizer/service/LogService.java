@@ -248,13 +248,14 @@ public class LogService implements LogServiceInterface {
             }
             if (startDate != null || endDate != null) {
                 boolQuery.must(QueryBuilders.range(r -> r
-                        .date(d -> {
-                            if (startDate != null) d.gte(startDate.toString());
-                            if (endDate != null) d.lte(endDate.toString());
-                            return d;
-                        })
+                        .date(d -> d
+                                .field("timestamp") // Define the field directly inside `.date()`
+                                .gte(String.valueOf(startDate != null ? startDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null))
+                                .lte(String.valueOf(endDate != null ? endDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null))
+                        )
                 ));
             }
+
 
             // Highlighting across all fields
             Highlight highlightBuilder = Highlight.of(h -> h
