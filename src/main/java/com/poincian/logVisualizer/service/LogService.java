@@ -27,6 +27,8 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -288,15 +290,30 @@ public class LogService implements LogServiceInterface {
 
                 // Apply highlights ONLY to fields where matches exist
                 highlightFields.forEach((field, highlights) -> {
+                    // Skip highlighting for specific fields like 'level' and 'timestamp'
+                    if ("level".equalsIgnoreCase(field) || "timestamp".equalsIgnoreCase(field)) {
+                        return;
+                    }
                     if (!highlights.isEmpty() && source.containsKey(field)) {
-                        updatedSource.put(field, highlights.get(0)); // Update only matched fields
+                        String originalValue = source.get(field).toString();
+                        for (String snippet : highlights) {
+                            Matcher matcher = Pattern.compile("<em>(.*?)</em>").matcher(snippet);
+                            while (matcher.find()) {
+                                String updatedKeyword = Pattern.quote(matcher.group(1));
+                                // Replace all occurrences of keyword with highlighted version (case-insensitive)
+                                originalValue = originalValue.replaceAll("(?i)(" + updatedKeyword + ")", "<em>$1</em>");
+                            }
+                        }
+                        updatedSource.put(field, originalValue); // Injected highlights into full value
                     }
                 });
+
 
                 return LogEntryDocumentDTO.builder()
                         .id(hit.id())
                         .level((String) updatedSource.get("level"))
                         .serviceName((String) updatedSource.get("serviceName"))
+                        .exception((String) updatedSource.get("exception"))
                         .message((String) updatedSource.get("message")) // Will be highlighted only if 'message' had a match
                         .timestamp(updatedSource.get("timestamp") != null
                                 ? LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(updatedSource.get("timestamp").toString())), ZoneId.systemDefault())
@@ -317,7 +334,4 @@ public class LogService implements LogServiceInterface {
             throw new RuntimeException("An unexpected error occurred while searching logs.");
         }
     }
-
-
-
 }
