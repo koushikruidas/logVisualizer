@@ -1,6 +1,7 @@
 package com.poincian.logVisualizer.service;
 
 import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.aggregations.Aggregation;
 import co.elastic.clients.elasticsearch._types.query_dsl.BoolQuery;
 import co.elastic.clients.elasticsearch._types.query_dsl.QueryBuilders;
 import co.elastic.clients.elasticsearch.core.SearchRequest;
@@ -333,5 +334,35 @@ public class LogService implements LogServiceInterface {
             log.error("Unexpected error while querying Elasticsearch", e);
             throw new RuntimeException("An unexpected error occurred while searching logs.");
         }
+    }
+
+    public Map<String, Long> getLogCountByLevel(String index) throws IOException {
+        return executeAggregationQuery(index,"log_levels", "level.keyword");
+    }
+
+    public Map<String, Long> getLogCountByService(String index) throws IOException {
+        return executeAggregationQuery(index,"service_count", "serviceName.keyword");
+    }
+
+    public Map<String, Long> getLogCountByDate(String index) throws IOException {
+        return executeAggregationQuery(index,"log_by_date", "timestamp");
+    }
+
+    private Map<String, Long> executeAggregationQuery(String index, String aggName, String fieldName) throws IOException {
+        SearchRequest searchRequest = SearchRequest.of(s -> s
+                .index(index) // Use your Elasticsearch index
+                .size(0) // No need to fetch documents, just aggregation
+                .aggregations(aggName, Aggregation.of(a -> a
+                        .terms(t -> t.field(fieldName))
+                ))
+        );
+
+        SearchResponse<Void> response = elasticsearchClient.search(searchRequest, Void.class);
+
+        Map<String, Long> result = new HashMap<>();
+        var aggregation = response.aggregations().get(aggName).sterms().buckets().array();
+        aggregation.forEach(bucket -> result.put(bucket.key().stringValue(), bucket.docCount()));
+
+        return result;
     }
 }
