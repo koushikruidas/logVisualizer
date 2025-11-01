@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -226,7 +227,7 @@ public class LogService implements LogServiceInterface {
 
     @Override
     public LogSearchResponseDTO searchLogsWithHighlight(String index, String level, String serviceName, String keyword,
-                                                        LocalDateTime startDate, LocalDateTime endDate,
+                                                        Instant startDate, Instant endDate,
                                                         int page, int size) {
         try {
             if (index == null || index.isEmpty()) {
@@ -253,8 +254,8 @@ public class LogService implements LogServiceInterface {
                 boolQuery.must(QueryBuilders.range(r -> r
                         .date(d -> d
                                 .field("timestamp") // Define the field directly inside `.date()`
-                                .gte(String.valueOf(startDate != null ? startDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null))
-                                .lte(String.valueOf(endDate != null ? endDate.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() : null))
+                                .gte(String.valueOf(startDate != null ? String.valueOf(startDate.toEpochMilli()) : null))
+                                .lte(String.valueOf(endDate != null ? String.valueOf(endDate.toEpochMilli()) : null))
                         )
                 ));
             }
@@ -317,7 +318,9 @@ public class LogService implements LogServiceInterface {
                         .exception((String) updatedSource.get("exception"))
                         .message((String) updatedSource.get("message")) // Will be highlighted only if 'message' had a match
                         .timestamp(updatedSource.get("timestamp") != null
-                                ? LocalDateTime.ofInstant(Instant.ofEpochMilli(Long.parseLong(updatedSource.get("timestamp").toString())), ZoneId.systemDefault())
+                                ? LocalDateTime.ofInstant(
+                                Instant.ofEpochMilli(Long.parseLong(updatedSource.get("timestamp").toString())),
+                                ZoneOffset.UTC)
                                 : null)
                         .rawLog(source.toString()) // Preserve raw log structure
                         .build();
@@ -337,15 +340,15 @@ public class LogService implements LogServiceInterface {
     }
 
     public Map<String, Long> getLogCountByLevel(String index) throws IOException {
-        return executeAggregationQuery(index,"log_levels", "level.keyword");
+        return executeAggregationQuery(index, "log_levels", "level.keyword");
     }
 
     public Map<String, Long> getLogCountByService(String index) throws IOException {
-        return executeAggregationQuery(index,"service_count", "serviceName.keyword");
+        return executeAggregationQuery(index, "service_count", "serviceName.keyword");
     }
 
     public Map<String, Long> getLogCountByDate(String index) throws IOException {
-        return executeAggregationQuery(index,"log_by_date", "timestamp");
+        return executeAggregationQuery(index, "log_by_date", "timestamp");
     }
 
     private Map<String, Long> executeAggregationQuery(String index, String aggName, String fieldName) throws IOException {
